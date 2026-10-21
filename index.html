@@ -73,6 +73,7 @@ h2 .count{font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;color:
 .case-tag.anime{background:rgba(236,72,153,.15);border-color:rgba(236,72,153,.4);color:#f9a8d4}
 .case-tag.divine{background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.5);color:#fcd34d}
 .case-tag.creator{background:rgba(34,211,238,.15);border-color:rgba(34,211,238,.5);color:#67e8f9}
+.case-tag.farm{background:rgba(132,204,22,.15);border-color:rgba(132,204,22,.45);color:#a3e635}
 .case-avatar{position:relative;width:82px;height:82px;margin:10px auto 14px;border-radius:20px;background:linear-gradient(145deg,color-mix(in srgb,var(--c) 32%,#0a0a0a),color-mix(in srgb,var(--c) 8%,#000));border:1.5px solid color-mix(in srgb,var(--c) 60%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 12px 28px -12px var(--c);display:grid;place-items:center;overflow:hidden;z-index:2}
 .case-avatar::after{content:'';position:absolute;inset:-30% -30% auto auto;width:130%;height:130%;background:radial-gradient(circle,var(--c),transparent 65%);opacity:.4;pointer-events:none}
 .case-avatar svg{width:56%;height:56%;color:var(--c);filter:drop-shadow(0 4px 10px rgba(0,0,0,.55));position:relative;z-index:2}
@@ -453,7 +454,7 @@ const parseAmount=s=>{const str=String(s).trim().replace(',','.');const n=parseF
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s'},2300);setTimeout(()=>t.remove(),2700)}
 function lockBody(v){document.body.classList.toggle('locked',v)}
 
-const RARITY_ORDER=['common','uncommon','rare','epic','legendary','mythic','secret'];
+const RARITY_ORDER=['common','uncommon','rare','epic','legendary','mythic','secret','farm'];
 const RARITY={
   common:{name:'Обычный',color:'#94a3b8',range:[4,25]},
   uncommon:{name:'Необычный',color:'#4ade80',range:[20,100]},
@@ -461,7 +462,8 @@ const RARITY={
   epic:{name:'Эпический',color:'#a855f7',range:[500,3500]},
   legendary:{name:'Легендарный',color:'#f43f5e',range:[3000,18000]},
   mythic:{name:'Мифический',color:'#fbbf24',range:[15000,110000]},
-  secret:{name:'Секретный',color:'#22d3ee',range:[150000,300000]}
+  secret:{name:'Секретный',color:'#22d3ee',range:[150000,300000]},
+  farm:{name:'Ферма',color:'#84cc16',range:[0.10,4.00]}
 };
 
 const WEAPONS=[
@@ -493,7 +495,7 @@ const SKINS=[],SKIN_MAP={};let nextSkinId=0;
   let seed=20240517;const srand=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff};
   WEAPONS.forEach((w,wi)=>{
     RARITY_ORDER.forEach((r,ri)=>{
-      if(r==='secret')return;
+      if(r==='secret'||r==='farm')return;
       const names=POOL[r];const name=names[(wi*3+ri*5)%names.length];
       const [lo,hi]=RARITY[r].range;
       let price=roundPrice((lo+(hi-lo)*srand())*w.mult);price=Math.max(3,price);
@@ -505,6 +507,27 @@ const SKINS=[],SKIN_MAP={};let nextSkinId=0;
    {weapon:'Керамбит',weaponId:'karambit',name:'Изумрудный дракон',rarity:'secret',price:220000,icon:'🔪'},
    {weapon:'Штык-нож',weaponId:'bayonet',name:'Аврора',rarity:'secret',price:180000,icon:'🗡️'}
   ].forEach(s=>{s.id=nextSkinId++;s.display=`${s.weapon} | ${s.name}`;SKINS.push(s);SKIN_MAP[s.id]=s});
+  const FARM_DATA=[
+    {name:'Семечко', price:0.10, icon:'🌱', weight:4},
+    {name:'Росток', price:0.15, icon:'🌿', weight:4},
+    {name:'Солома', price:0.20, icon:'🌾', weight:4},
+    {name:'Зерно', price:0.30, icon:'🌾', weight:13},
+    {name:'Кукуруза', price:0.40, icon:'🌽', weight:14},
+    {name:'Тыква', price:0.50, icon:'🎃', weight:14},
+    {name:'Морковь', price:0.60, icon:'🥕', weight:14},
+    {name:'Картофель', price:0.70, icon:'🥔', weight:13},
+    {name:'Арбуз', price:0.80, icon:'🍉', weight:5},
+    {name:'Золотое яблоко', price:1.00, icon:'🍎', weight:5},
+    {name:'Корова', price:1.20, icon:'🐄', weight:4},
+    {name:'Трактор', price:1.50, icon:'🚜', weight:3},
+    {name:'Амбар', price:2.00, icon:'🏚️', weight:1.8},
+    {name:'Золотая корова', price:3.00, icon:'🐮', weight:0.9},
+    {name:'Императорская ферма', price:4.00, icon:'👑', weight:0.3}
+  ];
+  FARM_DATA.forEach(f=>{
+    const skin={id:nextSkinId++,weapon:'Ферма',weaponId:'farm',name:f.name,rarity:'farm',price:f.price,icon:f.icon,display:`Ферма | ${f.name}`,isFarm:true,farmWeight:f.weight};
+    SKINS.push(skin);SKIN_MAP[skin.id]=skin;
+  });
 })();
 
 const SKINS_BY_RARITY={};RARITY_ORDER.forEach(r=>SKINS_BY_RARITY[r]=SKINS.filter(s=>s.rarity===r));
@@ -525,11 +548,13 @@ const AVATARS={
   snow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v20M3.5 7L20.5 17M3.5 17L20.5 7M8 4l4 2 4-2M8 20l4-2 4 2"/></svg>',
   fire:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c0 3-3 5-3 8 0 1.5 1 2 1 2s-1-2 1-4c0 2 1 3 1 4 2-1 3-4 3-4 1 2 2 4 2 6a5 5 0 1 1-10 0c0-2 1-3 2-4 0-3 3-5 3-8z"/></svg>',
   seven:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14l-8 16h-3l5-13H5z"/></svg>',
-  rocket:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c3 2 5 6 5 11l-3 3H10l-3-3c0-5 2-9 5-11z"/><path d="M7 17l-2 5 4-2zM17 17l2 5-4-2z"/></svg>'
+  rocket:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c3 2 5 6 5 11l-3 3H10l-3-3c0-5 2-9 5-11z"/><path d="M7 17l-2 5 4-2zM17 17l2 5-4-2z"/></svg>',
+  farm:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V13"/><path d="M12 13c-3 0-5-2-5-5 3 0 5 2 5 5z"/><path d="M12 13c3 0 5-2 5-5-3 0-5 2-5 5z"/><path d="M8 22h8"/></svg>'
 };
 const avatarFor=c=>AVATARS[c.avatar]||AVATARS.box;
 
 const CASES=[
+  {id:'farm',name:'Ферма',price:1,avatar:'farm',color:'#84cc16',tag:'farm',isFarmCase:true,odds:{farm:100}},
   {id:'starter',name:'Стартовый кейс',price:25,avatar:'box',color:'#94a3b8',tag:'base',odds:{common:72,uncommon:20,rare:7,epic:0.9,legendary:0.1}},
   {id:'budget',name:'Бюджетный кейс',price:50,avatar:'box',color:'#4ade80',tag:'base',odds:{common:62,uncommon:24,rare:11,epic:2.7,legendary:0.3}},
   {id:'weapon',name:'Оружейный кейс',price:90,avatar:'gun',color:'#3b82f6',tag:'base',odds:{common:50,uncommon:27,rare:15,epic:6.4,legendary:1.5,mythic:0.1}},
@@ -593,12 +618,12 @@ const CASES=[
 ];
 
 const CASE_CATEGORIES=[
-  {key:'all',label:'Все'},{key:'base',label:'📦 Базовые'},{key:'theme',label:'🎨 Тематические'},
+  {key:'all',label:'Все'},{key:'farm',label:'🌱 Ферма'},{key:'base',label:'📦 Базовые'},{key:'theme',label:'🎨 Тематические'},
   {key:'weapon',label:'🔫 Оружейные'},{key:'yt',label:'📺 Ютуберы'},{key:'foot',label:'⚽ Футбол'},
   {key:'7a',label:'7А'},{key:'ny',label:'🎅 Новый год'},{key:'sweet',label:'🍫 Сладкие'},
   {key:'anime',label:'🌸 Аниме'},{key:'divine',label:'⚜️ Эндгейм'}
 ];
-const CASE_TAG_LABEL={base:'CASE',theme:'THEME',weapon:'WEAPON',yt:'YOUTUBER',foot:'FOOTBALL','7a':'7A',ny:'NEW YEAR',sweet:'SWEET',anime:'ANIME',divine:'ENDGAME',creator:'ENDGAME'};
+const CASE_TAG_LABEL={farm:'FARM',base:'CASE',theme:'THEME',weapon:'WEAPON',yt:'YOUTUBER',foot:'FOOTBALL','7a':'7A',ny:'NEW YEAR',sweet:'SWEET',anime:'ANIME',divine:'ENDGAME',creator:'ENDGAME'};
 
 const PROMOS={};
 const USER_CODES=[
@@ -631,15 +656,27 @@ function bumpStreak(win){if(win)state.winStreak++;else state.winStreak=0;save();
 function updateStreakBadge(){const badge=$('#streakBadge');const penalty=getWinPenalty();if(state.winStreak<3){badge.classList.remove('show')}else{badge.classList.add('show');badge.innerHTML=`🔥 ${state.winStreak} побед <span style="color:#fbbf24">-${Math.round(penalty*100)}%</span>`}updateStreakWarning()}
 function updateStreakWarning(){const el=$('#streakWarn');if(!el)return;const penalty=getWinPenalty();if(penalty>0){el.classList.add('show');el.textContent=`🔥 Серия ${state.winStreak} побед — шанс -${Math.round(penalty*100)}%`}else el.classList.remove('show')}
 
+// getCasePool: минимум -70% от цены для обычных, легендарки/мифики/секретки — только верхняя граница
 function getCasePool(c){
-  const minP=c.price*0.05;
-  const maxP=c.price*2.75;
+  if(c.isFarmCase){
+    const result={};
+    for(const r of RARITY_ORDER) result[r]=[];
+    result.farm=SKINS_BY_RARITY['farm']||[];
+    return result;
+  }
+  const minP=c.minPrice!==undefined?c.minPrice:c.price*0.30;
+  const maxP=c.maxPrice!==undefined?c.maxPrice:c.price*2.75;
+  const PREMIUM=['legendary','mythic','secret'];
   const result={};
   for(const r of RARITY_ORDER){
+    if(r==='farm'){ result[r]=[]; continue; }
     let list=SKINS_BY_RARITY[r]||[];
     if(c.weaponIds&&c.weaponIds.length)list=list.filter(s=>c.weaponIds.includes(s.weaponId));
-    list=list.filter(s=>s.price>=minP&&s.price<=maxP);
-    result[r]=list;
+    if(PREMIUM.includes(r)){
+      result[r]=list.filter(s=>s.price<=maxP);
+    } else {
+      result[r]=list.filter(s=>s.price>=minP&&s.price<=maxP);
+    }
   }
   return result;
 }
@@ -657,9 +694,17 @@ function getCaseMinPrice(c){const n=normalizedOdds(c);const pool=getCasePool(c);
 function getCaseMaxPrice(c){const n=normalizedOdds(c);const pool=getCasePool(c);let max=0;for(const r of RARITY_ORDER){if(n.get(r)<=0)continue;const list=pool[r];if(!list||!list.length)continue;for(const s of list)if(s.price>max)max=s.price}return max}
 
 function rollSkin(c){
+  if(c.isFarmCase){
+    const farmSkins=SKINS_BY_RARITY['farm']||[];
+    if(!farmSkins.length) return pick(SKINS);
+    const totalW=farmSkins.reduce((s,sk)=>s+(sk.farmWeight||1),0);
+    let r=Math.random()*totalW;
+    for(const s of farmSkins){r-=(s.farmWeight||1);if(r<=0)return s}
+    return farmSkins[farmSkins.length-1];
+  }
   const pool=getCasePool(c);
   const avail=getAvailableRarities(c);
-  if(!avail.length){let best=[];const minP=c.price*0.05;const maxP=c.price*2.75;for(const s of SKINS)if(s.price>=minP&&s.price<=maxP)best.push(s);if(!best.length)best=SKINS.slice().sort((a,b)=>a.price-b.price).slice(0,10);return pick(best)}
+  if(!avail.length){let best=[];const minP=c.price*0.30;const maxP=c.price*2.75;for(const s of SKINS)if(s.price>=minP&&s.price<=maxP)best.push(s);if(!best.length)best=SKINS.slice().sort((a,b)=>a.price-b.price).slice(0,10);return pick(best)}
   const {weights}=getNormalizedAvailableOdds(c);
   const penalty=getWinPenalty();
   let roll=Math.random();
@@ -751,7 +796,7 @@ function openPreview(c){
   const skinsBox=$('#pvSkins');skinsBox.innerHTML='';
   Object.keys(weights).forEach(r=>{
     const list=pool[r]||[];if(!list.length)return;
-    const samples=list.slice(0,5);
+    const samples=c.isFarmCase?list:list.slice(0,5);
     const block=document.createElement('div');block.className='pv-rar-block';block.style.setProperty('--c',RARITY[r].color);
     block.innerHTML=`<div class="pv-rar-head"><span class="dot"></span><span class="nm">${RARITY[r].name}</span><span class="cnt">${list.length} скинов • ${(weights[r]*100).toFixed(weights[r]*100<1?2:1)}%</span></div><div class="pv-samples">${samples.map(s=>`<div class="pv-sample" style="--c:${RARITY[r].color}"><div class="ps-i">${s.icon}</div><div class="ps-t"><div class="ps-n">${s.weapon} | ${s.name}</div><div class="ps-p">${fmt(s.price)} 💰</div></div></div>`).join('')}</div>${list.length>samples.length?`<div class="pv-more">и ещё ${list.length-samples.length} скинов этой редкости</div>`:''}`;
     skinsBox.appendChild(block);
